@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task List</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .task-container {
+            margin-top: 20px;
+        }
+        .task {
+            padding: 10px;
+            margin-bottom: 5px;
+            background-color: #f4f4f4;
+            border: 1px solid #ddd;
+        }
+        #taskForm input {
+            padding: 10px;
+            font-size: 16px;
+        }
+        .message {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f4f4f4;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <h1>Task List</h1>
+    <form id="taskForm">
+        <input type="text" id="taskInput" placeholder="Enter a task" required />
+        <button type="submit">Add Task</button>
+    </form>
+
+    <div class="task-container" id="taskContainer">
+        <!-- Tasks will appear here -->
+    </div>
+
+    <div id="message" class="message" style="display:none;"></div>
+
+    <script>
+        // Function to fetch and display tasks
+        function loadTasks() {
+            fetch('http://localhost:8080/tasks')
+                .then(response => response.json())
+                .then(data => {
+                    const taskContainer = document.getElementById('taskContainer');
+                    taskContainer.innerHTML = ''; // Clear current tasks
+
+                    data.forEach(task => {
+                        const taskElement = document.createElement('div');
+                        taskElement.className = 'task';
+                        taskElement.innerText = task.name;
+                        taskContainer.appendChild(taskElement);
+                    });
+                });
+        }
+
+        // Form submission handler
+        document.getElementById('taskForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const taskInput = document.getElementById('taskInput');
+            const taskName = taskInput.value.trim();
+
+            if (taskName) {
+                fetch('http://localhost:8080/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ name: taskName }),
+                })
+                .then(response => response.text())
+                .then((message) => {
+                    loadTasks();  // Reload tasks after adding
+                    taskInput.value = '';  // Clear input field
+
+                    // Show success message
+                    const messageElement = document.getElementById('message');
+                    messageElement.textContent = message;
+                    messageElement.style.display = 'block';
+                })
+                .catch(error => console.error('Error adding task:', error));
+            }
+        });
+
+        // Load tasks when the page loads
+        window.onload = loadTasks;
+    </script>
+</body>
+</html>
+
