@@ -1,17 +1,25 @@
+## 📋 Task Manager
+
+A simple Go + SQLite3 backend with a lightweight HTML frontend.
+
+## 🚀 Requirements
+
+Go (version ≥ 1.18 recommended)
+SQLite3
+
 # Usage
 
-## Requirements
-Go, SQLite3 
-
-## Execution
-Backend setup.
+## ⚙️Execution
+### Backend setup.
 ```bash
 cd backend
 go run main.go
 ```
-For frontend just open .html file.
+### Frontend setup.
 
-To read database queries.
+Open index.html
+
+## To read database queries.
 ```bash
 cd backend
 sqlite3 tasks.db
