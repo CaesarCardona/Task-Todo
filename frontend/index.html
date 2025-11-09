@@ -3,88 +3,160 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Task List</title>
+<title>Schedule</title>
 <style>
-    body { font-family: Arial; }
-    .task-container { margin-top: 20px; }
-    .task { padding: 10px; margin-bottom: 5px; background: #f4f4f4; border: 1px solid #ddd;
-        display: flex; justify-content: space-between; align-items: center; }
-    .task button { padding: 5px 10px; background: #e74c3c; color: white; border: none; cursor: pointer; }
-    .task button:hover { background: #c0392b; }
-    #taskForm input { padding: 10px; font-size: 16px; }
-    .message { margin-top: 20px; padding: 10px; background: #f4f4f4; border: 1px solid #ddd; }
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: #f0f2f5;
+        display: flex;
+        justify-content: center;
+        padding-top: 50px;
+    }
+    .container {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        width: 350px;
+    }
+    h1 {
+        text-align: center;
+        color: #333;
+    }
+    #taskForm {
+        display: flex;
+        margin-bottom: 20px;
+    }
+    #taskInput {
+        flex: 1;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px 0 0 5px;
+        font-size: 16px;
+    }
+    #taskForm button {
+        padding: 10px 15px;
+        background: #4CAF50;
+        color: white;
+        border: none;
+        font-size: 16px;
+        border-radius: 0 5px 5px 0;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+    #taskForm button:hover {
+        background: #45a049;
+    }
+    .task-container {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .task {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px;
+        background: #f4f4f4;
+        border-radius: 5px;
+        transition: 0.2s;
+    }
+    .task:hover {
+        background: #e2e2e2;
+    }
+    .task button {
+        padding: 5px 10px;
+        background: #e74c3c;
+        border: none;
+        border-radius: 5px;
+        color: white;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+    .task button:hover {
+        background: #c0392b;
+    }
+    .message {
+        margin-top: 20px;
+        padding: 10px;
+        background: #dff0d8;
+        border: 1px solid #d6e9c6;
+        border-radius: 5px;
+        text-align: center;
+        display: none;
+    }
 </style>
 </head>
 <body>
-
-<h1>Task List</h1>
-<form id="taskForm">
-    <input type="text" id="taskInput" placeholder="Enter a task" required />
-    <button type="submit">Add Task</button>
-</form>
-
-<div class="task-container" id="taskContainer"></div>
-<div id="message" class="message" style="display:none;"></div>
+<div class="container">
+    <h1>Schedule</h1>
+    <form id="taskForm">
+        <input type="text" id="taskInput" placeholder="Enter a task" required />
+        <button type="submit">Add</button>
+    </form>
+    <div class="task-container" id="taskContainer"></div>
+    <div id="message" class="message"></div>
+</div>
 
 <script>
-function loadTasks() {
-    fetch('http://localhost:8080/tasks')
-    .then(res => res.json())
-    .then(data => {
-        const container = document.getElementById('taskContainer');
-        container.innerHTML = '';
-        data.forEach(task => {
-            const div = document.createElement('div');
-            div.className = 'task';
+    function loadTasks() {
+        fetch('http://localhost:8080/tasks')
+        .then(res => res.json())
+        .then(data => {
+            const container = document.getElementById('taskContainer');
+            container.innerHTML = '';
+            data.forEach(task => {
+                const div = document.createElement('div');
+                div.className = 'task';
 
-            const span = document.createElement('span');
-            span.innerText = task.name;
+                const span = document.createElement('span');
+                span.innerText = task.name;
 
-            const btn = document.createElement('button');
-            btn.innerText = 'Delete';
-            btn.addEventListener('click', () => deleteTask(task.id));
+                const btn = document.createElement('button');
+                btn.innerText = 'Delete';
+                btn.addEventListener('click', () => deleteTask(task.id));
 
-            div.appendChild(span);
-            div.appendChild(btn);
-            container.appendChild(div);
+                div.appendChild(span);
+                div.appendChild(btn);
+                container.appendChild(div);
+            });
+        });
+    }
+
+    function deleteTask(id) {
+        fetch(`http://localhost:8080/delete?id=${id}`, { method: 'DELETE' })
+        .then(res => res.text())
+        .then(msg => {
+            loadTasks();
+            const message = document.getElementById('message');
+            message.textContent = msg;
+            message.style.display = 'block';
+            setTimeout(() => message.style.display = 'none', 2000);
+        });
+    }
+
+    document.getElementById('taskForm').addEventListener('submit', e => {
+        e.preventDefault();
+        const name = document.getElementById('taskInput').value.trim();
+        if (!name) return;
+
+        fetch('http://localhost:8080/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name })
+        })
+        .then(res => res.text())
+        .then(msg => {
+            loadTasks();
+            document.getElementById('taskInput').value = '';
+            const message = document.getElementById('message');
+            message.textContent = msg;
+            message.style.display = 'block';
+            setTimeout(() => message.style.display = 'none', 2000);
         });
     });
-}
 
-function deleteTask(id) {
-    fetch(`http://localhost:8080/delete?id=${id}`, { method: 'DELETE' })
-    .then(res => res.text())
-    .then(msg => {
-        loadTasks();
-        const message = document.getElementById('message');
-        message.textContent = msg;
-        message.style.display = 'block';
-    });
-}
-
-document.getElementById('taskForm').addEventListener('submit', e => {
-    e.preventDefault();
-    const name = document.getElementById('taskInput').value.trim();
-    if (!name) return;
-
-    fetch('http://localhost:8080/add', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name })
-    })
-    .then(res => res.text())
-    .then(msg => {
-        loadTasks();
-        document.getElementById('taskInput').value = '';
-        const message = document.getElementById('message');
-        message.textContent = msg;
-        message.style.display = 'block';
-    });
-});
-
-window.onload = loadTasks;
+    window.onload = loadTasks;
 </script>
-
 </body>
 </html>
-

@@ -1,7 +1,11 @@
 ## 📋 Task Manager
 
-A simple Go + SQLite3 backend with a lightweight HTML frontend.
+A simple Go + SQLite3 backend with a lightweight HTML/CSS frontend.
 
+
+<p align="center">
+  <img src="assets/schedule-funcionality.gif" alt="Scheduler-demo" width="600"/>
+</p>
 
 
 ## 🚀 Requirements
@@ -43,7 +47,7 @@ Delete task 3
 ```bash
 DELETE FROM tasks WHERE id = 3;
 ```
-Instert new task
+Insert new task
 ```bash
 INSERT INTO tasks(name) VALUES('Purge Cache');
 ```
