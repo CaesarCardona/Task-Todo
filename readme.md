@@ -1,4 +1,4 @@
-## 📋 Task Manager
+## 📋 Schedule Manager
 
 A simple Go + SQLite3 backend with a lightweight HTML/CSS frontend.
 
