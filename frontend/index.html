@@ -1,97 +1,90 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Task List</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-        }
-        .task-container {
-            margin-top: 20px;
-        }
-        .task {
-            padding: 10px;
-            margin-bottom: 5px;
-            background-color: #f4f4f4;
-            border: 1px solid #ddd;
-        }
-        #taskForm input {
-            padding: 10px;
-            font-size: 16px;
-        }
-        .message {
-            margin-top: 20px;
-            padding: 10px;
-            background-color: #f4f4f4;
-            border: 1px solid #ddd;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Task List</title>
+<style>
+    body { font-family: Arial; }
+    .task-container { margin-top: 20px; }
+    .task { padding: 10px; margin-bottom: 5px; background: #f4f4f4; border: 1px solid #ddd;
+        display: flex; justify-content: space-between; align-items: center; }
+    .task button { padding: 5px 10px; background: #e74c3c; color: white; border: none; cursor: pointer; }
+    .task button:hover { background: #c0392b; }
+    #taskForm input { padding: 10px; font-size: 16px; }
+    .message { margin-top: 20px; padding: 10px; background: #f4f4f4; border: 1px solid #ddd; }
+</style>
 </head>
 <body>
-    <h1>Task List</h1>
-    <form id="taskForm">
-        <input type="text" id="taskInput" placeholder="Enter a task" required />
-        <button type="submit">Add Task</button>
-    </form>
 
-    <div class="task-container" id="taskContainer">
-        <!-- Tasks will appear here -->
-    </div>
+<h1>Task List</h1>
+<form id="taskForm">
+    <input type="text" id="taskInput" placeholder="Enter a task" required />
+    <button type="submit">Add Task</button>
+</form>
 
-    <div id="message" class="message" style="display:none;"></div>
+<div class="task-container" id="taskContainer"></div>
+<div id="message" class="message" style="display:none;"></div>
 
-    <script>
-        // Function to fetch and display tasks
-        function loadTasks() {
-            fetch('http://localhost:8080/tasks')
-                .then(response => response.json())
-                .then(data => {
-                    const taskContainer = document.getElementById('taskContainer');
-                    taskContainer.innerHTML = ''; // Clear current tasks
+<script>
+function loadTasks() {
+    fetch('http://localhost:8080/tasks')
+    .then(res => res.json())
+    .then(data => {
+        const container = document.getElementById('taskContainer');
+        container.innerHTML = '';
+        data.forEach(task => {
+            const div = document.createElement('div');
+            div.className = 'task';
 
-                    data.forEach(task => {
-                        const taskElement = document.createElement('div');
-                        taskElement.className = 'task';
-                        taskElement.innerText = task.name;
-                        taskContainer.appendChild(taskElement);
-                    });
-                });
-        }
+            const span = document.createElement('span');
+            span.innerText = task.name;
 
-        // Form submission handler
-        document.getElementById('taskForm').addEventListener('submit', function(event) {
-            event.preventDefault();
+            const btn = document.createElement('button');
+            btn.innerText = 'Delete';
+            btn.addEventListener('click', () => deleteTask(task.id));
 
-            const taskInput = document.getElementById('taskInput');
-            const taskName = taskInput.value.trim();
-
-            if (taskName) {
-                fetch('http://localhost:8080/add', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ name: taskName }),
-                })
-                .then(response => response.text())
-                .then((message) => {
-                    loadTasks();  // Reload tasks after adding
-                    taskInput.value = '';  // Clear input field
-
-                    // Show success message
-                    const messageElement = document.getElementById('message');
-                    messageElement.textContent = message;
-                    messageElement.style.display = 'block';
-                })
-                .catch(error => console.error('Error adding task:', error));
-            }
+            div.appendChild(span);
+            div.appendChild(btn);
+            container.appendChild(div);
         });
+    });
+}
 
-        // Load tasks when the page loads
-        window.onload = loadTasks;
-    </script>
+function deleteTask(id) {
+    fetch(`http://localhost:8080/delete?id=${id}`, { method: 'DELETE' })
+    .then(res => res.text())
+    .then(msg => {
+        loadTasks();
+        const message = document.getElementById('message');
+        message.textContent = msg;
+        message.style.display = 'block';
+    });
+}
+
+document.getElementById('taskForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const name = document.getElementById('taskInput').value.trim();
+    if (!name) return;
+
+    fetch('http://localhost:8080/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+    })
+    .then(res => res.text())
+    .then(msg => {
+        loadTasks();
+        document.getElementById('taskInput').value = '';
+        const message = document.getElementById('message');
+        message.textContent = msg;
+        message.style.display = 'block';
+    });
+});
+
+window.onload = loadTasks;
+</script>
+
 </body>
 </html>
 

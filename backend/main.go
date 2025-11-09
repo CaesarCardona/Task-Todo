@@ -2,110 +2,124 @@ package main
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
-	_ "github.com/mattn/go-sqlite3"
+
+	"encoding/json"
+
 	"github.com/rs/cors"
+	_ "github.com/mattn/go-sqlite3"
 )
 
-var db *sql.DB
-
-// Task represents a task to be stored in the database
 type Task struct {
 	ID   int    `json:"id"`
 	Name string `json:"name"`
 }
 
+var db *sql.DB
+
 func main() {
 	var err error
-	// Open or create the database
 	db, err = sql.Open("sqlite3", "./tasks.db")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer db.Close()
 
-	// Create the tasks table if it doesn't exist
-	createTableQuery := `CREATE TABLE IF NOT EXISTS tasks (
+	// Create tasks table if not exists
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS tasks (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		name TEXT NOT NULL
-	);`
-	_, err = db.Exec(createTableQuery)
+	)`)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// Set up the routes
+	// Routes
 	http.HandleFunc("/tasks", getTasks)
 	http.HandleFunc("/add", addTask)
+	http.HandleFunc("/delete", deleteTask)
 
-	// Enable CORS
-	handler := cors.Default().Handler(http.DefaultServeMux)
+	// CORS
+	handler := cors.New(cors.Options{
+		AllowedMethods: []string{"GET", "POST", "DELETE"},
+	}).Handler(http.DefaultServeMux)
 
-	// Start the server with CORS enabled
-	fmt.Println("Server is running on http://localhost:8080")
+	fmt.Println("Server running on http://localhost:8080")
 	log.Fatal(http.ListenAndServe(":8080", handler))
 }
 
-// getTasks handles GET requests to fetch all tasks
+// Get all tasks
 func getTasks(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
-		return
-	}
-
 	rows, err := db.Query("SELECT id, name FROM tasks")
 	if err != nil {
-		http.Error(w, "Error fetching tasks from database", http.StatusInternalServerError)
+		http.Error(w, "Error fetching tasks", 500)
 		return
 	}
 	defer rows.Close()
 
 	var tasks []Task
 	for rows.Next() {
-		var task Task
-		if err := rows.Scan(&task.ID, &task.Name); err != nil {
-			http.Error(w, "Error scanning task", http.StatusInternalServerError)
+		var t Task
+		if err := rows.Scan(&t.ID, &t.Name); err != nil {
+			http.Error(w, "Error scanning task", 500)
 			return
 		}
-		tasks = append(tasks, task)
+		tasks = append(tasks, t)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(tasks)
 }
 
-// addTask handles POST requests to add a new task
+// Add a task
 func addTask(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		http.Error(w, "Invalid method", http.StatusMethodNotAllowed)
 		return
 	}
 
-	var task Task
-	if err := json.NewDecoder(r.Body).Decode(&task); err != nil {
-		http.Error(w, "Error decoding task", http.StatusBadRequest)
+	var t Task
+	if err := json.NewDecoder(r.Body).Decode(&t); err != nil {
+		http.Error(w, "Invalid request", http.StatusBadRequest)
 		return
 	}
 
-	// Insert the new task into the database
-	stmt, err := db.Prepare("INSERT INTO tasks(name) VALUES(?)")
+	_, err := db.Exec("INSERT INTO tasks(name) VALUES(?)", t.Name)
 	if err != nil {
-		http.Error(w, "Error preparing query", http.StatusInternalServerError)
+		http.Error(w, "Error inserting task", 500)
 		return
 	}
-	defer stmt.Close()
 
-	_, err = stmt.Exec(task.Name)
+	fmt.Fprint(w, "Task added successfully")
+}
+
+// Delete a task
+func deleteTask(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		http.Error(w, "Invalid method", http.StatusMethodNotAllowed)
+		return
+	}
+
+	id := r.URL.Query().Get("id")
+	if id == "" {
+		http.Error(w, "Missing id", 400)
+		return
+	}
+
+	res, err := db.Exec("DELETE FROM tasks WHERE id = ?", id)
 	if err != nil {
-		http.Error(w, "Error inserting task into database", http.StatusInternalServerError)
+		http.Error(w, "Error deleting task", 500)
 		return
 	}
 
-	// Send success response
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "Task added successfully")
+	rowsAffected, _ := res.RowsAffected()
+	if rowsAffected == 0 {
+		http.Error(w, "Task not found", 404)
+		return
+	}
+
+	fmt.Fprint(w, "Task deleted successfully")
 }
 
