@@ -1,6 +1,6 @@
 ## 📋 Schedule Manager
 
-A simple Go + SQLite3 backend with a lightweight HTML/CSS frontend.
+A minimalist web app powered by Go + SQLite3 backend with a lightweight HTML/CSS frontend.
 
 
 <p align="center">
