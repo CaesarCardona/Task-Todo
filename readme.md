@@ -15,13 +15,38 @@ SQLite3
 
 # Usage
 
+
+
+
 ## ⚙️Execution
+
+### Dependencies
+```bash
+sudo apt update
+sudo apt install -y docker.io docker-compose
+sudo systemctl start docker
+sudo systemctl enable docker
+go get github.com/mattn/go-sqlite3
+go get github.com/segmentio/kafka-go
+```
 ### Backend setup.
+
+Setup Docker for Kafka 
+```bash
+docker-compose up -d
+```
+
+Check docker
+```bash
+docker-compose ps
+```
+Initiate Go backend
 ```bash
 cd backend
-go get github.com/mattn/go-sqlite3
 go run main.go
 ```
+
+
 ### Frontend setup.
 
 Open index.html
