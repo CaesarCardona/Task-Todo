@@ -40,7 +40,7 @@ Check docker
 ```bash
 docker-compose ps
 ```
-Initiate Go backend
+Initiate Go backend - Kafka Messages Appear in this terminal
 ```bash
 cd backend
 go run main.go
@@ -49,10 +49,11 @@ go run main.go
 
 ### Frontend setup.
 
-Open index.html
+Open index.html 
 
 ## To read database queries.
 ```bash
+cd backend
 sqlite3 tasks.db
 ```
 
